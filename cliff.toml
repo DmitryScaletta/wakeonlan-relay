@@ -1,3 +1,25 @@
+[changelog]
+body = """
+{%- macro remote_url() -%}
+  https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}
+{%- endmacro -%}
+{% macro print_commit(commit) -%}
+- {% if commit.scope %}*({{ commit.scope }})* {% endif %}\
+  {% if commit.breaking %}[**breaking**] {% endif %}\
+  {{ commit.message | upper_first }} - \
+  ([{{ commit.id | truncate(length=7, end="") }}]({{ self::remote_url() }}/commit/{{ commit.id }}))\
+{% endmacro -%}
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | trim | upper_first }}
+{% for commit in commits | sort(attribute="id") %}
+{{ self::print_commit(commit=commit) }}
+{% endfor %}
+{% endfor %}\n
+"""
+
 [git]
 conventional_commits = true
 filter_unconventional = true
+commit_parsers = [
+  { message = "^chore", skip = true },
+]
