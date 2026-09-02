@@ -1,0 +1,139 @@
+name: CI / Release
+
+on:
+  push:
+    branches: ['main']
+    tags: ['v*']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/') }}
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v7
+
+      - id: changes
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            src:
+              - 'src/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+
+      - if: steps.changes.outputs.src == 'true'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - if: steps.changes.outputs.src == 'true'
+        uses: Swatinem/rust-cache@v2
+
+      - parallel:
+        - if: steps.changes.outputs.src == 'true'
+          run: cargo clippy --all-targets --all-features --locked -- -D warnings
+        - if: steps.changes.outputs.src == 'true'
+          run: cargo test --all-features --locked
+        - if: steps.changes.outputs.src == 'true'
+          run: cargo fmt --all -- --check
+
+  build:
+    name: Build (${{ matrix.target }})
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            binary: wakeonlan-relay
+            archive: tar.gz,zip
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            binary: wakeonlan-relay.exe
+            archive: zip
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            binary: wakeonlan-relay
+            archive: tar.gz,zip
+    steps:
+      - uses: actions/checkout@v7
+      - if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{ matrix.target }}
+      - env:
+          CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER: musl-gcc
+        run: cargo build --release --target ${{ matrix.target }} --locked
+      - if: matrix.os != 'windows-latest'
+        shell: bash
+        run: |
+          mkdir -p release-artifacts
+          BIN="target/${{ matrix.target }}/release/${{ matrix.binary }}"
+          cp "$BIN" release-artifacts/
+          cd release-artifacts
+          if [[ "${{ matrix.archive }}" == *"tar.gz"* ]]; then
+            tar -czf ../wakeonlan-relay-${{ github.ref_name }}-${{ matrix.target }}.tar.gz ${{ matrix.binary }}
+          fi
+          if [[ "${{ matrix.archive }}" == *"zip"* ]]; then
+            zip -q ../wakeonlan-relay-${{ github.ref_name }}-${{ matrix.target }}.zip ${{ matrix.binary }}
+          fi
+      - if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release-artifacts | Out-Null
+          Copy-Item "target/${{ matrix.target }}/release/${{ matrix.binary }}" release-artifacts/
+          Compress-Archive -Path "release-artifacts/${{ matrix.binary }}" -DestinationPath "wakeonlan-relay-${{ github.ref_name }}-${{ matrix.target }}.zip" -Force
+      - uses: actions/upload-artifact@v7
+        with:
+          name: wakeonlan-relay-${{ github.ref_name }}-${{ matrix.target }}
+          path: |
+            wakeonlan-relay-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
+            wakeonlan-relay-${{ github.ref_name }}-${{ matrix.target }}.zip
+          if-no-files-found: error
+
+  release:
+    name: GitHub Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - id: cliff
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --tag ${{ github.ref_name }} --strip header
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          name: ${{ github.ref_name }}
+          body: ${{ steps.cliff.outputs.content }}
+          files: artifacts/**/*
+          generate_release_notes: false
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
