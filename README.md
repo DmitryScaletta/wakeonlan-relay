@@ -8,7 +8,7 @@ Useful when a WoL sender (phone, a remote server, an automation tool) can't reac
 
 ```text
 ┌──────────────┐   UDP/9    ┌───────────────────┐   UDP/7   ┌─────────────┐
-│ WoL sender   │ ─────────> │ wakeonlan-relay   │ ────────> │ Target host │
+│ WoL sender   │ ---------> │ wakeonlan-relay   │ --------> │ Target host │
 │ (any subnet) │            │ (this program)    │ broadcast │ (LAN)       │
 └──────────────┘            └───────────────────┘           └─────────────┘
 ```
@@ -29,13 +29,13 @@ wakeonlan-relay --listen 0.0.0.0:9 --broadcast 192.168.1.255:7
 
 ## Options
 
-| Flag | Short | Description |
-| --- | --- | --- |
-| `--listen` | | Required. Address+port the relay binds to |
-| `--broadcast` | | Required. Broadcast address+port packets are sent to |
-| `--daemon` | | Run detached in the background with no attached console. Aliases: `--background`, `--detach` |
-| `--help` | `-h` | Print help |
-| `--version` | `-V` | Print version |
+| Flag | Description |
+| --- | --- |
+| `--listen` | Required. Address+port the relay binds to |
+| `--broadcast` | Required. Broadcast address+port packets are sent to |
+| `--daemon` / <br> `--background` / <br> `--detach` | Run detached in the background with no attached console |
+| `--help` / `-h` | Print help |
+| `--version` / `-V` | Print version |
 
 Both addresses are parsed as `SocketAddr`, so any combination of IPv4 or IPv6 with an explicit port is accepted. The broadcast address must be reachable from the interface that owns the binding.
 
