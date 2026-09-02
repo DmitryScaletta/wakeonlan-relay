@@ -2,6 +2,7 @@ use std::net::SocketAddr;
 use std::process::ExitCode;
 
 use clap::Parser;
+use tracing::warn;
 
 mod relay;
 
@@ -31,6 +32,16 @@ fn main() -> ExitCode {
             return ExitCode::from(code);
         }
     };
+
+    if args.listen.port() == args.broadcast.port() {
+        warn!(
+            "listen and broadcast must use different ports (both use {}); \
+                 using the same port causes the relayed packet to loop back to \
+                 the listener",
+            args.listen.port()
+        );
+        return ExitCode::FAILURE;
+    }
 
     let result: Result<(), Box<dyn std::error::Error + Send + Sync>> = if args.daemon {
         let daemon = daemon_forge::ForgeDaemon::new()

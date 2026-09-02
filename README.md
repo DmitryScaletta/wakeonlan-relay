@@ -25,6 +25,8 @@ The relay does **not** interpret the packet's target MAC address; it forwards th
 wakeonlan-relay --listen 0.0.0.0:9 --broadcast 192.168.1.255:9
 ```
 
+> **Note:** `--listen` and `--broadcast` must use **different** ports. Using the same port causes the relayed packet to be delivered right back to the listener socket, producing an infinite loop of duplicate forwards.
+
 ## Options
 
 | Flag | Short | Description |
