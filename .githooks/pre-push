@@ -1,6 +1,7 @@
+#!/bin/sh
+
 # git config core.hooksPath .githooks
 
-#!/bin/sh
 set -e
 
 CHANGED='^(src/|Cargo)'
