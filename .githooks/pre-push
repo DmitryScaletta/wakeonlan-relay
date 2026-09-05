@@ -1,0 +1,12 @@
+# git config core.hooksPath .githooks
+
+#!/bin/sh
+set -e
+
+CHANGED='^(src/|Cargo)'
+
+if git diff --name-only @{push}...HEAD | grep -Eq "$CHANGED"; then
+    cargo fmt --all -- --check
+    cargo clippy --all-targets --all-features --locked -- -D warnings
+    cargo test --all-features --locked
+fi
