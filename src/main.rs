@@ -2,7 +2,8 @@ use std::net::SocketAddr;
 use std::process::ExitCode;
 
 use clap::Parser;
-use tracing::warn;
+use tracing::error;
+use tracing_subscriber::EnvFilter;
 
 mod relay;
 
@@ -23,27 +24,32 @@ struct Args {
     daemon: bool,
 }
 
-fn main() -> ExitCode {
-    let args = match Args::try_parse() {
-        Ok(a) => a,
-        Err(e) => {
-            let _ = e.print();
-            let code = u8::try_from(e.exit_code()).unwrap_or(2);
-            return ExitCode::from(code);
-        }
-    };
+#[derive(Debug, thiserror::Error)]
+enum AppError {
+    #[error("{0}")]
+    Args(#[from] clap::Error),
+
+    #[error("{0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("{0}")]
+    Daemon(#[from] daemon_forge::DaemonError),
+
+    #[error(
+        "listen and broadcast must use different ports (both use {0}); \
+         using the same port causes the relayed packet to loop back to the listener"
+    )]
+    SamePort(u16),
+}
+
+fn run() -> Result<(), AppError> {
+    let args = Args::try_parse()?;
 
     if args.listen.port() == args.broadcast.port() {
-        warn!(
-            "listen and broadcast must use different ports (both use {}); \
-                 using the same port causes the relayed packet to loop back to \
-                 the listener",
-            args.listen.port()
-        );
-        return ExitCode::FAILURE;
+        return Err(AppError::SamePort(args.listen.port()));
     }
 
-    let result: Result<(), Box<dyn std::error::Error + Send + Sync>> = if args.daemon {
+    if args.daemon {
         let daemon = daemon_forge::ForgeDaemon::new()
             .name("wakeonlan-relay")
             .stdout(daemon_forge::Stdio::devnull())
@@ -51,22 +57,29 @@ fn main() -> ExitCode {
             .privileged_action(move || {
                 relay::run(args.listen, args.broadcast).map_err(daemon_forge::DaemonError::from)
             });
-        daemon_forge::ForgeDaemon::start(daemon).map_err(to_boxed_error)
+        daemon_forge::ForgeDaemon::start(daemon)?;
     } else {
-        relay::run(args.listen, args.broadcast).map_err(to_boxed_error)
-    };
+        relay::run(args.listen, args.broadcast)?;
+    }
 
-    match result {
+    Ok(())
+}
+
+fn main() -> ExitCode {
+    if let Err(e) = tracing_subscriber::fmt()
+        .with_env_filter(
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
+        )
+        .try_init()
+    {
+        eprintln!("warning: could not initialize tracing subscriber: {e}");
+    }
+
+    match run() {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
-            eprintln!("{e}");
+            error!("{e}");
             ExitCode::FAILURE
         }
     }
-}
-
-fn to_boxed_error(
-    e: impl std::error::Error + Send + Sync + 'static,
-) -> Box<dyn std::error::Error + Send + Sync> {
-    Box::new(e)
 }

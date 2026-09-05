@@ -1,7 +1,6 @@
 use std::net::{SocketAddr, UdpSocket};
 
 use tracing::{debug, info, warn};
-use tracing_subscriber::EnvFilter;
 
 /// Length of the 0xFF synchronization stream at the start of a magic packet
 const SYNC_STREAM_LEN: usize = 6;
@@ -13,15 +12,6 @@ const MAC_REPEAT_COUNT: usize = 16;
 const MIN_WOL_PACKET_LEN: usize = SYNC_STREAM_LEN + MAC_REPEAT_COUNT * MAC_LEN;
 
 pub fn run(listen: SocketAddr, broadcast: SocketAddr) -> Result<(), std::io::Error> {
-    if let Err(e) = tracing_subscriber::fmt()
-        .with_env_filter(
-            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
-        )
-        .try_init()
-    {
-        eprintln!("warning: could not initialize tracing subscriber: {e}");
-    }
-
     let listener = UdpSocket::bind(listen)?;
     let sender = UdpSocket::bind("0.0.0.0:0")?;
     sender.set_broadcast(true)?;
