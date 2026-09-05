@@ -22,4 +22,5 @@ conventional_commits = true
 filter_unconventional = true
 commit_parsers = [
   { message = "^chore", skip = true },
+  { message = "^ci", skip = true },
 ]
