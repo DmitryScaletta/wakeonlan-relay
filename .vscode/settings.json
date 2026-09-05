@@ -1,6 +1,11 @@
 {
     "cSpell.words": [
+        "clippy",
         "devnull",
+        "endfor",
+        "endmacro",
+        "striptags",
+        "thiserror",
         "wakeonlan"
     ]
 }
