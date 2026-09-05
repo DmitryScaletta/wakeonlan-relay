@@ -4,6 +4,7 @@
         "devnull",
         "endfor",
         "endmacro",
+        "postprocessors",
         "striptags",
         "thiserror",
         "wakeonlan"
