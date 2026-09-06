@@ -77,6 +77,13 @@ fn main() -> ExitCode {
 
     match run() {
         Ok(()) => ExitCode::SUCCESS,
+        Err(AppError::Args(e)) => {
+            drop(e.print());
+            match e.exit_code() {
+                0 => ExitCode::SUCCESS,
+                _ => ExitCode::FAILURE,
+            }
+        }
         Err(e) => {
             error!("{e}");
             ExitCode::FAILURE
