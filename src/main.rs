@@ -11,19 +11,19 @@ pub(crate) const APP_NAME: &str = env!("CARGO_PKG_NAME");
 
 /// Forward incoming `WoL` magic packets to a local broadcast address
 #[derive(Debug, Parser)]
-#[command(version, about, long_about = None)]
+#[command(version, about)]
 struct Args {
-    /// Required. Address+port the relay binds to
-    #[arg(long)]
+    /// UDP socket to receive WoL packets on
+    #[arg(long, value_name = "ADDR:PORT")]
     listen: SocketAddr,
 
-    /// Required. Broadcast address+port packets are sent to
-    #[arg(long)]
+    /// Broadcast socket to relay WoL packets to
+    #[arg(long, value_name = "ADDR:PORT")]
     broadcast: SocketAddr,
 
-    /// Run detached in the background with no attached console
-    #[arg(long, alias = "background", alias = "detach")]
-    daemon: bool,
+    /// Run detached in the background
+    #[arg(long, short)]
+    detach: bool,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -51,7 +51,7 @@ fn run() -> Result<(), AppError> {
         return Err(AppError::SamePort(args.listen.port()));
     }
 
-    if args.daemon {
+    if args.detach {
         let daemon = daemon_forge::ForgeDaemon::new()
             .name(APP_NAME)
             .stdout(daemon_forge::Stdio::devnull())

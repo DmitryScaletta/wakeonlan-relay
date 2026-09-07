@@ -17,7 +17,7 @@ Useful when a WoL sender (phone, a remote server, an automation tool) can't reac
 2. Receive packets from anyone who can reach that socket.
 3. Forward accepted packets as UDP broadcasts to `--broadcast`.
 
-The relay does **not** interpret the packet's target MAC address; it forwards the full payload it received, unchanged.
+The relay forwards the full payload it received, unchanged.
 
 ## Usage
 
@@ -29,15 +29,13 @@ wakeonlan-relay --listen 0.0.0.0:9 --broadcast 192.168.1.255:7
 
 ## Options
 
-| Flag | Description |
-| --- | --- |
-| `--listen` | Required. Address+port the relay binds to |
-| `--broadcast` | Required. Broadcast address+port packets are sent to |
-| `--daemon` / <br> `--background` / <br> `--detach` | Run detached in the background with no attached console |
-| `--help` / `-h` | Print help |
-| `--version` / `-V` | Print version |
-
-Both addresses are parsed as `SocketAddr`, so any combination of IPv4 or IPv6 with an explicit port is accepted. The broadcast address must be reachable from the interface that owns the binding.
+| Flag               | Description                              |
+| ------------------ | ---------------------------------------- |
+| `--listen`         | UDP socket to receive WoL packets on     |
+| `--broadcast`      | Broadcast socket to relay WoL packets to |
+| `--detach` / `-d`  | Run detached in the background           |
+| `--help` / `-h`    | Print help                               |
+| `--version` / `-V` | Print version                            |
 
 ## Logging
 
