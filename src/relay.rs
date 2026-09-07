@@ -33,7 +33,8 @@ pub fn run(listen: SocketAddr, broadcast: SocketAddr) -> Result<(), std::io::Err
     let sender = UdpSocket::bind("0.0.0.0:0")?;
     sender.set_broadcast(true)?;
 
-    info!("wakeonlan-relay listening on {listen}, forwarding to {broadcast}");
+    let app_name = crate::APP_NAME;
+    info!("{app_name} listening on {listen}, forwarding to {broadcast}");
 
     let mut buf = [0u8; 2048];
     loop {

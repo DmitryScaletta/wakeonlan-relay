@@ -7,6 +7,8 @@ use tracing_subscriber::EnvFilter;
 
 mod relay;
 
+pub(crate) const APP_NAME: &str = env!("CARGO_PKG_NAME");
+
 /// Forward incoming `WoL` magic packets to a local broadcast address
 #[derive(Debug, Parser)]
 #[command(version, about, long_about = None)]
@@ -51,7 +53,7 @@ fn run() -> Result<(), AppError> {
 
     if args.daemon {
         let daemon = daemon_forge::ForgeDaemon::new()
-            .name("wakeonlan-relay")
+            .name(APP_NAME)
             .stdout(daemon_forge::Stdio::devnull())
             .stderr(daemon_forge::Stdio::devnull())
             .privileged_action(move || {
