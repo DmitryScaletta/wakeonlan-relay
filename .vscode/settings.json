@@ -1,11 +1,19 @@
 {
     "cSpell.words": [
         "clippy",
+        "codegen",
         "devnull",
+        "dtolnay",
         "endfor",
         "endmacro",
+        "expl",
+        "msvc",
+        "orhun",
         "postprocessors",
+        "refcell",
+        "softprops",
         "striptags",
+        "taiki",
         "thiserror",
         "wakeonlan"
     ]
