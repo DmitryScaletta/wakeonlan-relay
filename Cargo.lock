@@ -64,8 +64,7 @@ checksum = "c8d4a3bb8b1e0c1050499d1815f5ab16d04f0959b233085fb31653fbfc9d98f9"
 [[package]]
 name = "daemon_forge"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "139494d0bd7d2e2b716132fc9a6b904b0be1efd7794f3e1d84f695c7cf14c895"
+source = "git+https://github.com/DmitryScaletta/daemon_forge#a9b0f886668b56acb3b041aac8803a917123b782"
 dependencies = [
  "libc",
  "sd-notify",

@@ -10,6 +10,9 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 daemon_forge = "0.1"
 thiserror = "2"
 
+[patch.crates-io]
+daemon_forge = { git = "https://github.com/DmitryScaletta/daemon_forge" }
+
 [profile.release]
 opt-level = "z"
 lto = "fat"
@@ -64,7 +67,7 @@ float_cmp_const = "warn"
 lossy_float_literal = "warn"
 cast_sign_loss = "warn"
 invalid_upcast_comparisons = "warn"
-# Optional - these effectively force you to docment numeric invariants
+# Optional - these effectively force you to document numeric invariants
 # cast_possible_wrap = "warn"
 # cast_precision_loss = "warn"
 # cast_possible_truncation = "warn"
